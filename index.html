@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WordGuess — Support</title>
+<style>
+  :root {
+    --ink: #1d1f20;
+    --paper: #f2f2f3;
+    --steel: #5980a6;
+    --steel-deep: #416180;
+    --steel-field: #1d2d3d;
+    --amber: #c99150;
+    --neutral: #5d5d60;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  header {
+    background: var(--steel-field);
+    color: var(--paper);
+    padding: 48px 24px 40px;
+  }
+  .wordmark { display: flex; align-items: center; gap: 10px; max-width: 640px; margin: 0 auto; }
+  .tile {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 19px;
+  }
+  .tile.f { background: var(--paper); color: var(--steel-field); }
+  .tile.h { background: var(--amber); color: #241a09; }
+  .wordmark .name { font-size: 24px; font-weight: 700; margin-left: 4px; }
+  main { max-width: 640px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  h2 { font-size: 18px; margin: 32px 0 8px; }
+  p { margin: 0 0 16px; }
+  a { color: var(--steel-deep); }
+  .card {
+    border: 1px solid rgba(29,31,32,0.16);
+    padding: 20px;
+    margin: 24px 0;
+  }
+  .card a { font-weight: 600; text-decoration: none; }
+  footer {
+    max-width: 640px; margin: 0 auto; padding: 0 24px 48px;
+    font-size: 13px; color: var(--neutral);
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wordmark">
+    <span class="tile f">F</span><span class="tile h">H</span>
+    <span class="name">WordGuess</span>
+  </div>
+</header>
+<main>
+  <h1>Support</h1>
+  <p>WordGuess is a five-letter word-guessing game for iOS, built by FH Development Studio. Six guesses, no ads, no tracking, no account required.</p>
+
+  <div class="card">
+    <a href="mailto:jtienor@mac.com">jtienor@mac.com</a>
+    <p style="margin-top:8px; margin-bottom:0;">Questions, bug reports, or feedback — email us directly and we'll get back to you.</p>
+  </div>
+
+  <h2>How to play</h2>
+  <p>Guess the five-letter word in six tries. After each guess, every tile's color and shape mark shows how close you were: a filled tile in the right spot, a filled tile in the wrong spot, or an empty tile if the letter isn't in the word at all.</p>
+
+  <h2>Frequently asked</h2>
+  <p><strong>Is there a daily puzzle?</strong> Not yet — WordGuess currently offers unlimited rounds with a fresh word each time.</p>
+  <p><strong>Does WordGuess collect my data?</strong> No. See our <a href="privacy.html">Privacy Policy</a> — the app makes no network requests and stores everything locally on your device.</p>
+  <p><strong>How do I turn on Hard Mode?</strong> Open Settings from the game screen and toggle Hard Mode. It takes effect on your next new game.</p>
+</main>
+<footer>
+  © 2026 FH Development Studio, LLC · <a href="privacy.html">Privacy Policy</a>
+</footer>
+</body>
+</html>
