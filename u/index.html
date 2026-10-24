@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    FH Word Guess — puzzle-link landing page.
+
+    GitHub Pages serves this file for every path under the site that has
+    no file of its own, with the URL left intact in the address bar. That is
+    how /wordguess-support/d/292 and /wordguess-support/u/<seed> reach it:
+    the script below reads the puzzle number or seed from location.pathname.
+
+    On an iPhone with the app installed, iOS opens the app directly from
+    the universal link and this page is never shown. Without the app, the
+    Smart App Banner (apple-itunes-app, with app-argument set to this very
+    URL) plus the button below send the visitor to the App Store, and the
+    link is handed to the app on first launch after install.
+
+    The same file is published as d/index.html so a bare /d/ URL renders
+    too. Colors are the brand tokens from Views/Theme.swift.
+  -->
+  <title>FH Word Guess — You've been challenged</title>
+  <meta name="apple-itunes-app" content="app-id=6810256865">
+  <meta property="og:site_name" content="FH Word Guess">
+  <meta property="og:title" content="A friend challenged you in FH Word Guess">
+  <meta property="og:description" content="Guess the five-letter word in six tries. Open the link to play the exact same puzzle.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#1D2D3D">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600&display=swap">
+  <style>
+    :root {
+      --ink: #1D1F20;
+      --paper: #F2F2F3;
+      --steel: #5980A6;
+      --steel-deep: #416180;
+      --steel-field: #1D2D3D;
+      --amber: #C99150;
+      --amber-ink: #241A09;
+      --neutral: #5D5D60;
+      --neutral-light: #E7E7EA;
+      --bg: var(--paper);
+      --fg: var(--ink);
+      --muted: rgba(29, 31, 32, 0.62);
+      --hairline: rgba(29, 31, 32, 0.16);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: var(--steel-field);
+        --fg: var(--paper);
+        --muted: rgba(242, 242, 243, 0.68);
+        --hairline: rgba(242, 242, 243, 0.18);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+    main {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .wordmark {
+      display: inline-flex;
+      gap: 5px;
+      margin-bottom: 28px;
+    }
+    .wordmark span {
+      width: 34px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; letter-spacing: 0;
+      color: var(--paper);
+      position: relative;
+    }
+    .wordmark .c { background: var(--steel-deep); }
+    .wordmark .p { background: var(--amber); color: var(--amber-ink); }
+    .wordmark .a { background: var(--neutral); color: var(--neutral-light); }
+    .wordmark .e { border: 1px solid var(--hairline); color: var(--fg); }
+    .wordmark span::after {
+      position: absolute; top: 2px; right: 3px;
+      font-size: 7px; line-height: 1; opacity: 0.85;
+    }
+    .wordmark .c::after { content: "\2713"; }
+    .wordmark .p::after { content: "\25B2"; }
+    .wordmark .a::after { content: "\2013"; }
+    .eyebrow {
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 10px;
+    }
+    h1 {
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 34px; line-height: 1.1; font-weight: 600;
+      margin: 0 0 12px; letter-spacing: 0;
+    }
+    .friend {
+      font-size: 15px; color: var(--muted); margin: 0 0 28px;
+    }
+    .friend strong { color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .button {
+      display: block; width: 100%;
+      background: var(--steel-deep); color: var(--paper);
+      text-decoration: none; font-weight: 700; font-size: 16px;
+      padding: 16px 20px; border: 0; border-radius: 0;
+    }
+    .button:active { background: var(--steel-field); }
+    .secondary {
+      display: block; margin-top: 14px;
+      color: var(--steel); text-decoration: none; font-size: 14px;
+    }
+    .note {
+      margin-top: 36px; font-size: 12px; color: var(--muted); line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="wordmark" aria-hidden="true">
+      <span class="c">W</span><span class="p">O</span><span class="a">R</span><span class="e">D</span><span class="e">S</span>
+    </div>
+
+    <p class="eyebrow" id="eyebrow">FH Word Guess</p>
+    <h1 id="headline">A friend challenged you</h1>
+    <p class="friend" id="friend">Guess the five-letter word in six tries. Open this link in the app to play the exact same puzzle.</p>
+
+    <a class="button" id="store" href="https://apps.apple.com/app/id6810256865?ppid=97f06bd2-b688-46f7-8058-b9fe4f9bd3d2">Get FH Word Guess</a>
+    <a class="secondary" id="open" href="#">Already have the app? Open it</a>
+
+    <p class="note">
+      Free on the App Store for iPhone and iPad. If the app is installed, this
+      link opens the puzzle directly.
+    </p>
+  </main>
+
+  <script>
+    (function () {
+      var path = location.pathname.replace(/\/+$/, "");
+      var query = new URLSearchParams(location.search);
+      var attempts = query.get("a");
+      var match = path.match(/\/wordguess-support\/(d|u)\/([^/]+)/i);
+      var kind = match ? match[1].toLowerCase() : null;
+      var value = null;
+      if (match) { try { value = decodeURIComponent(match[2]); } catch (e) { value = null; } }
+      var here = location.href;
+      var storeURL = "https://apps.apple.com/app/id6810256865?ppid=97f06bd2-b688-46f7-8058-b9fe4f9bd3d2";
+
+      var headline = document.getElementById("headline");
+      var friend = document.getElementById("friend");
+      var eyebrow = document.getElementById("eyebrow");
+      var open = document.getElementById("open");
+
+      var scheme = null;
+      if (kind === "d" && /^\d+$/.test(value)) {
+        headline.textContent = "A friend challenged you to Daily #" + value;
+        eyebrow.textContent = "FH Word Guess · Daily puzzle";
+        scheme = "fhwordguess://d/" + value;
+      } else if (kind === "u" && /^[0-9a-z]+$/i.test(value)) {
+        headline.textContent = "A friend challenged you to a puzzle";
+        eyebrow.textContent = "FH Word Guess · Unlimited round";
+        scheme = "fhwordguess://u/" + value.toLowerCase();
+      } else {
+        headline.textContent = "Play FH Word Guess";
+        friend.textContent = "A free five-letter word game with a new daily puzzle, streaks, and Game Center leaderboards.";
+        open.style.display = "none";
+      }
+
+      if (scheme && attempts !== null && /^\d+$/.test(attempts)) {
+        var n = parseInt(attempts, 10);
+        friend.innerHTML = n === 0
+          ? "They didn't get it. Can you? Guess the five-letter word in six tries."
+          : "They solved it in <strong>" + n + " of 6</strong>. Can you beat it? Guess the five-letter word in six tries.";
+        scheme += "?a=" + n;
+      }
+
+      if (scheme) {
+        // Custom-scheme fallback for devices that didn't route the
+        // universal link (e.g. after a long-press "Open in Safari").
+        open.href = scheme;
+        // Smart App Banner: hand this exact link to the app after install.
+        var banner = document.querySelector('meta[name="apple-itunes-app"]');
+        if (banner) banner.setAttribute("content", "app-id=6810256865, app-argument=" + here);
+        var og = document.querySelector('meta[property="og:title"]');
+        if (og) og.setAttribute("content", headline.textContent);
+        document.title = headline.textContent + " — FH Word Guess";
+      }
+
+      document.getElementById("store").href = storeURL;
+    })();
+  </script>
+</body>
+</html>
