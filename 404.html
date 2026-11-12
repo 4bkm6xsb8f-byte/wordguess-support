@@ -4,12 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!--
-    FH Word Guess — puzzle-link landing page.
+    WordGuess — puzzle-link landing page, with a playable daily board.
 
     GitHub Pages serves this file for every path under the site that has
     no file of its own, with the URL left intact in the address bar. That is
     how /wordguess-support/d/292 and /wordguess-support/u/<seed> reach it:
     the script below reads the puzzle number or seed from location.pathname.
+    Because the page is served for arbitrary paths, every URL in it is
+    absolute (/wordguess-support/...).
 
     On an iPhone with the app installed, iOS opens the app directly from
     the universal link and this page is never shown. Without the app, the
@@ -17,14 +19,23 @@
     URL) plus the button below send the visitor to the App Store, and the
     link is handed to the app on first launch after install.
 
+    A /d/<n> link (or a bare visit, which means today's number) is also
+    playable right here. The answer is derived exactly as the app derives
+    it (Engine/DailyPuzzle.swift: SplitMix64 seeded with the puzzle number,
+    one draw, modulo the answers.txt line count) from /wordguess-support/words.js,
+    and guesses are scored with the same two-pass rule as
+    Engine/GameEngine.swift. Nothing is fetched from another site and the
+    answer is not written to the DOM or console until the round ends.
+
     The same file is published as d/index.html so a bare /d/ URL renders
     too. Colors are the brand tokens from Views/Theme.swift.
   -->
-  <title>FH Word Guess — You've been challenged</title>
+  <title>WordGuess — Play today's daily word puzzle free</title>
+  <meta name="description" content="Play today's WordGuess daily word puzzle free in your browser: guess the five-letter word in six tries. Get the iPhone and iPad app for streaks, unlimited play, widgets and Game Center.">
   <meta name="apple-itunes-app" content="app-id=6810256865">
-  <meta property="og:site_name" content="FH Word Guess">
-  <meta property="og:title" content="A friend challenged you in FH Word Guess">
-  <meta property="og:description" content="Guess the five-letter word in six tries. Open the link to play the exact same puzzle.">
+  <meta property="og:site_name" content="WordGuess">
+  <meta property="og:title" content="A friend challenged you in WordGuess">
+  <meta property="og:description" content="Guess the five-letter word in six tries. Play the exact same puzzle right in your browser, free.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
   <meta name="theme-color" content="#1D2D3D">
@@ -46,6 +57,9 @@
       --fg: var(--ink);
       --muted: rgba(29, 31, 32, 0.62);
       --hairline: rgba(29, 31, 32, 0.16);
+      --tile-filled: rgba(29, 31, 32, 0.55);
+      --key: rgba(29, 31, 32, 0.08);
+      --link: var(--steel-deep);
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -53,6 +67,9 @@
         --fg: var(--paper);
         --muted: rgba(242, 242, 243, 0.68);
         --hairline: rgba(242, 242, 243, 0.18);
+        --tile-filled: rgba(242, 242, 243, 0.55);
+        --key: rgba(242, 242, 243, 0.12);
+        --link: #8FB0D0;
       }
     }
     * { box-sizing: border-box; }
@@ -67,7 +84,9 @@
       justify-content: center;
       padding: 32px 16px;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
+    body.playable { align-items: flex-start; padding-top: 20px; }
     main {
       width: 100%;
       max-width: 420px;
@@ -78,6 +97,7 @@
       gap: 5px;
       margin-bottom: 28px;
     }
+    body.playable .wordmark { margin-bottom: 16px; }
     .wordmark span {
       width: 34px; height: 34px;
       display: inline-flex; align-items: center; justify-content: center;
@@ -105,24 +125,98 @@
       font-size: 34px; line-height: 1.1; font-weight: 600;
       margin: 0 0 12px; letter-spacing: 0;
     }
+    body.playable h1 { font-size: 28px; margin-bottom: 8px; }
     .friend {
       font-size: 15px; color: var(--muted); margin: 0 0 28px;
     }
+    body.playable .friend { margin-bottom: 18px; }
     .friend strong { color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }
     .button {
       display: block; width: 100%;
       background: var(--steel-deep); color: var(--paper);
       text-decoration: none; font-weight: 700; font-size: 16px;
       padding: 16px 20px; border: 0; border-radius: 0;
+      font-family: inherit; cursor: pointer;
     }
     .button:active { background: var(--steel-field); }
+    .button.outline {
+      background: transparent; color: var(--fg);
+      border: 1.5px solid var(--tile-filled);
+    }
     .secondary {
       display: block; margin-top: 14px;
-      color: var(--steel); text-decoration: none; font-size: 14px;
+      color: var(--link); text-decoration: none; font-size: 14px;
     }
     .note {
       margin-top: 36px; font-size: 12px; color: var(--muted); line-height: 1.5;
     }
+
+    /* ---- Playable board ---- */
+    [hidden] { display: none !important; }
+    #game { margin: 0 0 24px; }
+    .board {
+      --tile: min(56px, calc((100vw - 32px - 20px) / 5));
+      display: grid; grid-template-rows: repeat(6, var(--tile)); gap: 5px;
+      justify-content: center; margin: 0 auto;
+    }
+    .row { display: grid; grid-template-columns: repeat(5, var(--tile)); gap: 5px; }
+    .tile {
+      position: relative;
+      width: var(--tile); height: var(--tile);
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 600; font-size: calc(var(--tile) * 32 / 56); line-height: 1;
+      text-transform: uppercase;
+      border: 1.5px solid var(--hairline); border-radius: 0;
+      color: var(--fg); user-select: none; -webkit-user-select: none;
+    }
+    .tile.filled { border-color: var(--tile-filled); }
+    .tile.correct { background: var(--steel-deep); border-color: var(--steel-deep); color: var(--paper); }
+    .tile.present { background: var(--amber); border-color: var(--amber); color: var(--amber-ink); }
+    .tile.absent { background: var(--neutral); border-color: var(--neutral); color: var(--neutral-light); }
+    .tile::after, .key::after {
+      position: absolute; top: 3px; right: 5px;
+      font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 400; font-size: 10px; line-height: 1; opacity: 0.8;
+    }
+    .tile.correct::after, .key.correct::after { content: "\2713"; }
+    .tile.present::after, .key.present::after { content: "\25B2"; }
+    .tile.absent::after, .key.absent::after { content: "\2013"; }
+    .row.shake { animation: shake 0.32s linear; }
+    @keyframes shake {
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+    @media (prefers-reduced-motion: reduce) { .row.shake { animation: none; } }
+    .legend { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+    .toast {
+      min-height: 20px; margin: 10px 0 8px;
+      font-size: 14px; font-weight: 600; color: var(--fg);
+    }
+    .keyboard { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+    .krow { display: flex; gap: 4px; justify-content: center; }
+    .key {
+      position: relative;
+      flex: 1 1 0; min-width: 0; height: 50px; padding: 0;
+      font-family: inherit; font-weight: 600; font-size: 16px;
+      background: var(--key); color: var(--fg);
+      border: 0; border-radius: 0; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .key.wide { flex: 1.6 1 0; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .key.correct { background: var(--steel-deep); color: var(--paper); }
+    .key.present { background: var(--amber); color: var(--amber-ink); }
+    .key.absent { background: var(--neutral); color: var(--neutral-light); }
+    .key::after { top: 2px; right: 3px; font-size: 7px; }
+    .krow .spacer { flex: 0.5 1 0; }
+    .end { margin: 4px 0 0; }
+    .end .result {
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 26px; font-weight: 600; margin: 0 0 4px;
+    }
+    .end .answer { font-size: 15px; color: var(--muted); margin: 0 0 16px; }
+    .end .answer strong { color: var(--fg); letter-spacing: 0.08em; }
+    .end .cta { font-size: 15px; font-weight: 600; margin: 20px 0 0; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -131,12 +225,26 @@
       <span class="c">W</span><span class="p">O</span><span class="a">R</span><span class="e">D</span><span class="e">S</span>
     </div>
 
-    <p class="eyebrow" id="eyebrow">FH Word Guess</p>
+    <p class="eyebrow" id="eyebrow">WordGuess</p>
     <h1 id="headline">A friend challenged you</h1>
     <p class="friend" id="friend">Guess the five-letter word in six tries. Open this link in the app to play the exact same puzzle.</p>
 
-    <a class="button" id="store" href="https://apps.apple.com/app/id6810256865?ppid=97f06bd2-b688-46f7-8058-b9fe4f9bd3d2">Get FH Word Guess</a>
+    <section id="game" hidden aria-label="Daily puzzle">
+      <div class="board" id="board" role="group" aria-label="Guesses"></div>
+      <p class="legend" id="legend">&#x2713; right spot &nbsp;&middot;&nbsp; &#x25B2; wrong spot &nbsp;&middot;&nbsp; &#x2013; not in the word</p>
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+      <div class="keyboard" id="keyboard"></div>
+      <div class="end" id="end" hidden>
+        <p class="result" id="result"></p>
+        <p class="answer" id="answer"></p>
+        <button class="button outline" id="share" type="button">Share result</button>
+        <p class="cta">Get WordGuess free for streaks, Unlimited play, widgets and Game Center</p>
+      </div>
+    </section>
+
+    <a class="button" id="store" href="https://apps.apple.com/app/id6810256865?ppid=97f06bd2-b688-46f7-8058-b9fe4f9bd3d2">Get WordGuess</a>
     <a class="secondary" id="open" href="#">Already have the app? Open it</a>
+    <a class="secondary" id="playToday" href="/wordguess-support/d/" hidden>Play today's daily puzzle in your browser</a>
 
     <p class="note">
       Free on the App Store for iPhone and iPad. If the app is installed, this
@@ -144,7 +252,120 @@
     </p>
   </main>
 
+  <script src="/wordguess-support/words.js"></script>
   <script>
+    /*<engine>*/
+    // Pure logic, ported from the app. Kept between the engine markers so
+    // the same text can be extracted and run under node for verification.
+    var WGEngine = (function () {
+      var MASK = (1n << 64n) - 1n;
+      var GOLDEN = 0x9E3779B97F4A7C15n;
+
+      // Engine/DailyPuzzle.swift, SplitMix64.next() — first draw for `seed`.
+      function splitMix64First(seed) {
+        var state = (seed + GOLDEN) & MASK;
+        var z = state;
+        z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & MASK;
+        z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & MASK;
+        return z ^ (z >> 31n);
+      }
+
+      // DailyPuzzle.answer(forPuzzleNumber:from:) — index into answers.txt order.
+      function answerIndex(number, count) {
+        var n = BigInt(Math.max(number, 1));
+        var seed = (n * GOLDEN) & MASK;
+        return Number(splitMix64First(seed) % BigInt(count));
+      }
+
+      function wordAt(packed, index) {
+        return packed.substr(index * 5, 5);
+      }
+
+      function dailyAnswer(number, packedAnswers) {
+        var count = packedAnswers.length / 5;
+        if (count < 1) return null;
+        return wordAt(packedAnswers, answerIndex(number, count)).toUpperCase();
+      }
+
+      // DailyPuzzle.number(for:) — whole local-calendar days since
+      // 2026-01-01, plus 1, never below 1. Date.UTC on the local
+      // year/month/day counts calendar days without DST drift.
+      function puzzleNumber(date) {
+        var day = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+        var epoch = Date.UTC(2026, 0, 1);
+        return Math.max(Math.round((day - epoch) / 86400000), 0) + 1;
+      }
+
+      // GameEngine.score(guess:answer:) — two passes; exact matches claim
+      // their letter first, then leftovers may be present.
+      function score(guess, answer) {
+        var g = guess.toUpperCase().split("");
+        var a = answer.toUpperCase().split("");
+        var states = [];
+        var remaining = {};
+        var i;
+        for (i = 0; i < g.length; i++) {
+          if (g[i] === a[i]) {
+            states[i] = "correct";
+          } else {
+            states[i] = "absent";
+            remaining[a[i]] = (remaining[a[i]] || 0) + 1;
+          }
+        }
+        for (i = 0; i < g.length; i++) {
+          if (states[i] === "correct") continue;
+          if (remaining[g[i]] > 0) {
+            states[i] = "present";
+            remaining[g[i]] -= 1;
+          }
+        }
+        return states;
+      }
+
+      // The app's valid set is valid_guesses.txt (a superset of answers.txt).
+      function buildValidSet(packedAnswers, packedExtra) {
+        var set = new Set();
+        var i;
+        for (i = 0; i < packedAnswers.length; i += 5) set.add(packedAnswers.substr(i, 5));
+        for (i = 0; i < packedExtra.length; i += 5) set.add(packedExtra.substr(i, 5));
+        return set;
+      }
+
+      // GameEngine.keyboardLetterStates — best known state per letter.
+      var PRIORITY = { absent: 0, present: 1, correct: 2 };
+      function keyboardStates(guesses, answer) {
+        var best = {};
+        guesses.forEach(function (word) {
+          var states = score(word, answer);
+          for (var i = 0; i < word.length; i++) {
+            var letter = word[i];
+            if (!(letter in best) || PRIORITY[states[i]] > PRIORITY[best[letter]]) best[letter] = states[i];
+          }
+        });
+        return best;
+      }
+
+      // Same shape as GameViewModel.shareText(), with the tile marks
+      // (correct, present, absent) standing in for the emoji squares.
+      var MARKS = { correct: "✓", present: "▲", absent: "–" };
+      function shareText(number, guesses, answer, won, maxAttempts) {
+        var lines = ["FH Word Guess Daily #" + number + " " + (won ? guesses.length : "X") + "/" + maxAttempts, ""];
+        guesses.forEach(function (word) {
+          lines.push(score(word, answer).map(function (s) { return MARKS[s]; }).join(""));
+        });
+        lines.push("");
+        lines.push("https://4bkm6xsb8f-byte.github.io/wordguess-support/d/" + number);
+        return lines.join("\n");
+      }
+
+      return {
+        answerIndex: answerIndex, dailyAnswer: dailyAnswer, puzzleNumber: puzzleNumber,
+        score: score, buildValidSet: buildValidSet, keyboardStates: keyboardStates,
+        shareText: shareText
+      };
+    })();
+    /*</engine>*/
+
     (function () {
       var path = location.pathname.replace(/\/+$/, "");
       var query = new URLSearchParams(location.search);
@@ -160,20 +381,45 @@
       var friend = document.getElementById("friend");
       var eyebrow = document.getElementById("eyebrow");
       var open = document.getElementById("open");
+      var playToday = document.getElementById("playToday");
+
+      var haveWords = typeof window.WG_ANSWERS === "string" && window.WG_ANSWERS.length >= 5 &&
+        typeof window.WG_EXTRA === "string" && typeof BigInt === "function";
+      var today = WGEngine.puzzleNumber(new Date());
+      playToday.href = "/wordguess-support/d/" + today;
+
+      // Which puzzle, if any, is playable on this visit.
+      var playNumber = null;
+      var notYet = false;
 
       var scheme = null;
-      if (kind === "d" && /^\d+$/.test(value)) {
-        headline.textContent = "A friend challenged you to Daily #" + value;
-        eyebrow.textContent = "FH Word Guess · Daily puzzle";
-        scheme = "fhwordguess://d/" + value;
+      if (kind === "d" && /^\d{1,7}$/.test(value) && parseInt(value, 10) >= 1) {
+        var linked = parseInt(value, 10);
+        headline.textContent = "A friend challenged you to Daily #" + linked;
+        eyebrow.textContent = "WordGuess · Daily puzzle";
+        scheme = "fhwordguess://d/" + linked;
+        // One day of slack: the sender may be a time zone ahead.
+        if (linked <= today + 1) {
+          playNumber = linked;
+          friend.textContent = "Guess the five-letter word in six tries. Play it right here, or open this link in the app for the exact same puzzle.";
+        } else {
+          notYet = true;
+        }
       } else if (kind === "u" && /^[0-9a-z]+$/i.test(value)) {
         headline.textContent = "A friend challenged you to a puzzle";
-        eyebrow.textContent = "FH Word Guess · Unlimited round";
+        eyebrow.textContent = "WordGuess · Unlimited round";
         scheme = "fhwordguess://u/" + value.toLowerCase();
+        if (haveWords) playToday.hidden = false;
       } else {
-        headline.textContent = "Play FH Word Guess";
+        headline.textContent = "Play WordGuess";
         friend.textContent = "A free five-letter word game with a new daily puzzle, streaks, and Game Center leaderboards.";
         open.style.display = "none";
+        if (haveWords) {
+          playNumber = today;
+          headline.textContent = "Daily #" + today;
+          eyebrow.textContent = "WordGuess · Daily puzzle";
+          friend.textContent = "Guess the five-letter word in six tries. Everyone gets the same word today.";
+        }
       }
 
       if (scheme && attempts !== null && /^\d+$/.test(attempts)) {
@@ -182,6 +428,11 @@
           ? "They didn't get it. Can you? Guess the five-letter word in six tries."
           : "They solved it in <strong>" + n + " of 6</strong>. Can you beat it? Guess the five-letter word in six tries.";
         scheme += "?a=" + n;
+      }
+
+      if (notYet) {
+        friend.textContent = "That puzzle isn't out yet. Open the link in the app on its day, or play today's puzzle now.";
+        if (haveWords) playToday.hidden = false;
       }
 
       if (scheme) {
@@ -193,10 +444,194 @@
         if (banner) banner.setAttribute("content", "app-id=6810256865, app-argument=" + here);
         var og = document.querySelector('meta[property="og:title"]');
         if (og) og.setAttribute("content", headline.textContent);
-        document.title = headline.textContent + " — FH Word Guess";
+        document.title = headline.textContent + " — WordGuess";
       }
 
       document.getElementById("store").href = storeURL;
+
+      if (playNumber === null || !haveWords) return;
+
+      // ---- Playable daily board ----
+      var MAX = 6, LEN = 5;
+      var number = playNumber;
+      var answer = WGEngine.dailyAnswer(number, window.WG_ANSWERS);
+      if (!answer) return;
+      var valid = WGEngine.buildValidSet(window.WG_ANSWERS, window.WG_EXTRA);
+      var storageKey = "fhwg-daily-" + number;
+      var guesses = [];
+      var current = "";
+
+      try {
+        var saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+        if (saved && Array.isArray(saved.g)) {
+          for (var s = 0; s < saved.g.length && guesses.length < MAX; s++) {
+            var w = String(saved.g[s]).toUpperCase();
+            if (!valid.has(w)) break;
+            guesses.push(w);
+            if (w === answer) break;
+          }
+        }
+      } catch (e) { guesses = []; }
+
+      function save() {
+        try { localStorage.setItem(storageKey, JSON.stringify({ g: guesses })); } catch (e) {}
+      }
+      function won() { return guesses.length > 0 && guesses[guesses.length - 1] === answer; }
+      function over() { return won() || guesses.length >= MAX; }
+
+      document.body.classList.add("playable");
+      var game = document.getElementById("game");
+      var board = document.getElementById("board");
+      var keyboard = document.getElementById("keyboard");
+      var toast = document.getElementById("toast");
+      var legend = document.getElementById("legend");
+      var end = document.getElementById("end");
+      var shareButton = document.getElementById("share");
+      var tiles = [], rows = [], keys = {};
+      var NAMES = { correct: "right spot", present: "wrong spot", absent: "not in the word" };
+
+      for (var r = 0; r < MAX; r++) {
+        var row = document.createElement("div");
+        row.className = "row";
+        tiles[r] = [];
+        for (var c = 0; c < LEN; c++) {
+          var tile = document.createElement("div");
+          tile.className = "tile";
+          tile.setAttribute("role", "img");
+          row.appendChild(tile);
+          tiles[r][c] = tile;
+        }
+        rows[r] = row;
+        board.appendChild(row);
+      }
+
+      ["QWERTYUIOP", "ASDFGHJKL", "+ZXCVBNM-"].forEach(function (letters, index) {
+        var krow = document.createElement("div");
+        krow.className = "krow";
+        if (index === 1) krow.appendChild(spacer());
+        letters.split("").forEach(function (ch) {
+          var key = document.createElement("button");
+          key.type = "button";
+          key.className = "key";
+          if (ch === "+") { key.textContent = "Enter"; key.className += " wide"; key.dataset.key = "Enter"; }
+          else if (ch === "-") { key.textContent = "⌫"; key.className += " wide"; key.dataset.key = "Backspace"; key.setAttribute("aria-label", "Delete"); key.style.fontSize = "18px"; }
+          else { key.textContent = ch; key.dataset.key = ch; keys[ch] = key; }
+          krow.appendChild(key);
+        });
+        if (index === 1) krow.appendChild(spacer());
+        keyboard.appendChild(krow);
+      });
+      function spacer() { var el = document.createElement("div"); el.className = "spacer"; return el; }
+
+      var toastTimer = null;
+      function say(text, sticky) {
+        toast.textContent = text;
+        if (toastTimer) clearTimeout(toastTimer);
+        if (!sticky) toastTimer = setTimeout(function () { toast.textContent = ""; }, 1800);
+      }
+
+      function render() {
+        for (var r = 0; r < MAX; r++) {
+          var word = r < guesses.length ? guesses[r] : (r === guesses.length && !over() ? current : "");
+          var states = r < guesses.length ? WGEngine.score(word, answer) : null;
+          for (var c = 0; c < LEN; c++) {
+            var tile = tiles[r][c];
+            var letter = word[c] || "";
+            tile.textContent = letter;
+            tile.className = "tile" + (states ? " " + states[c] : (letter ? " filled" : ""));
+            tile.setAttribute("aria-label", letter ? (states ? letter + ", " + NAMES[states[c]] : letter) : "empty");
+          }
+        }
+        var best = WGEngine.keyboardStates(guesses, answer);
+        Object.keys(keys).forEach(function (letter) {
+          keys[letter].className = "key" + (best[letter] ? " " + best[letter] : "");
+          keys[letter].setAttribute("aria-label", best[letter] ? letter + ", " + NAMES[best[letter]] : letter);
+        });
+        if (over()) {
+          keyboard.hidden = true;
+          legend.hidden = true;
+          end.hidden = false;
+          document.getElementById("result").textContent = won()
+            ? "Solved in " + guesses.length + " of " + MAX
+            : "Not this time";
+          var line = document.getElementById("answer");
+          line.textContent = "The word was ";
+          var strong = document.createElement("strong");
+          strong.textContent = answer;
+          line.appendChild(strong);
+        }
+      }
+
+      function press(key) {
+        if (over()) return;
+        if (key === "Enter") {
+          if (current.length < LEN) { reject("Not enough letters"); return; }
+          if (!valid.has(current)) { reject("Not in word list"); return; }
+          guesses.push(current);
+          current = "";
+          save();
+          say("");
+        } else if (key === "Backspace") {
+          current = current.slice(0, -1);
+        } else if (/^[A-Z]$/.test(key) && current.length < LEN) {
+          current += key;
+        }
+        render();
+      }
+
+      function reject(text) {
+        say(text);
+        var row = rows[guesses.length];
+        row.classList.remove("shake");
+        void row.offsetWidth;
+        row.classList.add("shake");
+      }
+
+      keyboard.addEventListener("click", function (event) {
+        var key = event.target.closest ? event.target.closest(".key") : null;
+        if (!key) return;
+        key.blur();
+        press(key.dataset.key);
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.metaKey || event.ctrlKey || event.altKey || over()) return;
+        var tag = event.target && event.target.tagName;
+        // Leave Enter alone on a focused link or button (store, share).
+        if (event.key === "Enter" && (tag === "A" || tag === "BUTTON")) return;
+        if (event.key === "Enter" || event.key === "Backspace") {
+          event.preventDefault();
+          press(event.key);
+        } else if (/^[a-zA-Z]$/.test(event.key)) {
+          press(event.key.toUpperCase());
+        }
+      });
+
+      shareButton.addEventListener("click", function () {
+        var text = WGEngine.shareText(number, guesses, answer, won(), MAX);
+        function done() { say("Copied to clipboard"); }
+        function fallback() {
+          var area = document.createElement("textarea");
+          area.value = text;
+          area.setAttribute("readonly", "");
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.appendChild(area);
+          area.select();
+          var ok = false;
+          try { ok = document.execCommand("copy"); } catch (e) {}
+          document.body.removeChild(area);
+          if (ok) done(); else say("Couldn't copy. Select and copy the board instead.");
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, fallback);
+        } else {
+          fallback();
+        }
+      });
+
+      game.hidden = false;
+      render();
     })();
   </script>
 </body>
