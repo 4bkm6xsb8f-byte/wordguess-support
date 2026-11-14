@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    WordGuess — past puzzles. Static text for readers and search engines;
+    the script lists every daily puzzle from #1 (2026-01-01) through
+    yesterday, newest first, grouped by month. Answers come from
+    /wordguess-support/words.js with the same rule as the puzzle page
+    (d/index.html) and are only computed when a row's button is pressed.
+    Today's and future answers are never shown here. A month's rows are
+    built the first time it is opened, so the page stays light.
+    No external requests, no storage.
+  -->
+  <title>WordGuess past puzzles — every daily word puzzle answer</title>
+  <meta name="description" content="Every past WordGuess daily word puzzle since 1 January 2026, newest first. Check yesterday's answer or any earlier five-letter word, or replay an old puzzle free in your browser.">
+  <meta name="apple-itunes-app" content="app-id=6810256865">
+  <link rel="canonical" href="https://4bkm6xsb8f-byte.github.io/wordguess-support/archive/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600&display=swap">
+  <meta property="og:site_name" content="WordGuess">
+  <meta property="og:title" content="WordGuess past puzzles">
+  <meta property="og:description" content="Every past WordGuess daily word puzzle and its answer, newest first. Replay any of them free in your browser.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://4bkm6xsb8f-byte.github.io/wordguess-support/archive/">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#1D2D3D">
+  <style>
+    :root {
+      --ink: #1D1F20;
+      --paper: #F2F2F3;
+      --steel: #5980A6;
+      --steel-deep: #416180;
+      --steel-field: #1D2D3D;
+      --amber: #C99150;
+      --amber-ink: #241A09;
+      --neutral: #5D5D60;
+      --neutral-light: #E7E7EA;
+      --bg: var(--paper);
+      --fg: var(--ink);
+      --muted: rgba(29, 31, 32, 0.74);
+      --hairline: rgba(29, 31, 32, 0.16);
+      --tile-filled: rgba(29, 31, 32, 0.55);
+      --key: rgba(29, 31, 32, 0.08);
+      --link: var(--steel-deep);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: var(--steel-field);
+        --fg: var(--paper);
+        --muted: rgba(242, 242, 243, 0.76);
+        --hairline: rgba(242, 242, 243, 0.18);
+        --tile-filled: rgba(242, 242, 243, 0.55);
+        --key: rgba(242, 242, 243, 0.12);
+        --link: #8FB0D0;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px; line-height: 1.55;
+      padding: 20px 16px 48px;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    [hidden] { display: none !important; }
+    header, main, footer { width: 100%; max-width: 520px; margin: 0 auto; }
+    header { text-align: center; }
+    .wordmark { display: inline-flex; gap: 5px; margin-bottom: 14px; text-decoration: none; }
+    .wordmark span {
+      width: 34px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; letter-spacing: 0;
+      color: var(--paper);
+      position: relative;
+    }
+    .wordmark .c { background: var(--steel-deep); }
+    .wordmark .p { background: var(--amber); color: var(--amber-ink); }
+    .wordmark .a { background: var(--neutral); color: var(--neutral-light); }
+    .wordmark .e { border: 1px solid var(--hairline); color: var(--fg); }
+    .wordmark span::after {
+      position: absolute; top: 2px; right: 3px;
+      font-size: 7px; line-height: 1; opacity: 0.85;
+    }
+    .wordmark .c::after { content: "\2713"; }
+    .wordmark .p::after { content: "\25B2"; }
+    .wordmark .a::after { content: "\2013"; }
+    .eyebrow {
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 10px;
+    }
+    h1, h2 {
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 600; letter-spacing: 0; line-height: 1.15;
+    }
+    h1 { font-size: 32px; margin: 0 0 10px; }
+    h2 { font-size: 22px; margin: 36px 0 10px; }
+    p { margin: 0 0 14px; }
+    .lede { color: var(--muted); margin-bottom: 20px; }
+    a { color: var(--link); }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+    .actions { display: grid; gap: 10px; margin: 20px 0 8px; }
+    @media (min-width: 440px) { .actions { grid-template-columns: 1fr 1fr; } }
+    .button {
+      display: block; width: 100%; text-align: center;
+      background: var(--steel-deep); color: var(--paper);
+      text-decoration: none; font-weight: 700; font-size: 16px;
+      padding: 15px 18px; border: 1.5px solid var(--steel-deep); border-radius: 0;
+      font-family: inherit; cursor: pointer;
+    }
+    .button:active { background: var(--steel-field); }
+    .button.outline {
+      background: transparent; color: var(--fg);
+      border-color: var(--tile-filled);
+    }
+    footer {
+      margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--hairline);
+      font-size: 13px; color: var(--muted);
+    }
+    footer nav a { margin-right: 14px; white-space: nowrap; }
+    .count { font-weight: 600; margin: 0 0 6px; font-variant-numeric: tabular-nums; }
+    .month { border-top: 1px solid var(--hairline); }
+    .month:last-child { border-bottom: 1px solid var(--hairline); }
+    .month h3 { margin: 0; font-size: inherit; }
+    .month-toggle {
+      display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px;
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 20px; font-weight: 600; text-align: left;
+      color: var(--fg); background: transparent; border: 0; border-radius: 0;
+      padding: 14px 2px; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .month-toggle .meta {
+      font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px; font-weight: 400; color: var(--muted); white-space: nowrap;
+    }
+    .month-toggle .meta::after { content: "  +"; }
+    .month-toggle[aria-expanded="true"] .meta::after { content: "  \2013"; }
+    .rows { list-style: none; margin: 0 0 12px; padding: 0; }
+    .rows li {
+      display: grid; grid-template-columns: 3.4em 1fr auto; align-items: center;
+      column-gap: 10px; row-gap: 6px;
+      padding: 10px 2px; border-top: 1px solid var(--hairline);
+      font-variant-numeric: tabular-nums;
+    }
+    .rows .num { font-weight: 700; }
+    .rows time { color: var(--muted); font-size: 15px; }
+    .rows .play { font-size: 14px; white-space: nowrap; padding: 6px 0; }
+    .rows .controls { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; min-height: 36px; }
+    .show {
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      color: var(--fg); background: var(--key);
+      border: 1.5px solid var(--hairline); border-radius: 0;
+      padding: 8px 12px; min-width: 7.6em; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .show[aria-expanded="true"] { border-color: var(--tile-filled); }
+    .word {
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 22px; font-weight: 600; letter-spacing: 0.12em; line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="wordmark" href="/wordguess-support/d/" aria-label="WordGuess: play today's puzzle">
+      <span class="c" aria-hidden="true">W</span><span class="p" aria-hidden="true">O</span><span class="a" aria-hidden="true">R</span><span class="e" aria-hidden="true">D</span><span class="e" aria-hidden="true">S</span>
+    </a>
+  </header>
+
+  <main>
+    <p class="eyebrow">WordGuess · Daily puzzle archive</p>
+    <h1>WordGuess past puzzles</h1>
+    <p class="lede">
+      Every WordGuess daily word puzzle since the first one on 1 January 2026,
+      newest first. Tap "Show answer" on any row to see that day's five-letter
+      word, or replay the puzzle in your browser before you look.
+    </p>
+
+    <div class="actions">
+      <a class="button" href="/wordguess-support/d/">Play today's puzzle</a>
+      <a class="button outline" href="https://apps.apple.com/app/id6810256865">Get the app</a>
+    </div>
+
+    <section aria-labelledby="listHeading">
+      <h2 id="listHeading">All past daily puzzles</h2>
+      <p class="count" id="count" role="status"></p>
+      <p>
+        Today's puzzle is not listed, so nothing here can spoil it. Want a
+        nudge for today instead? Try
+        <a href="/wordguess-support/hints/">today's WordGuess hints</a>.
+      </p>
+      <div id="months"></div>
+      <noscript>
+        <p><strong>The list needs JavaScript.</strong> It is built in your browser from today's date, so nothing is sent anywhere. Turn JavaScript on and reload, or just <a href="/wordguess-support/d/">play today's puzzle</a>.</p>
+      </noscript>
+      <p id="unavailable" hidden>The list could not be loaded. Reload the page, or <a href="/wordguess-support/d/">play today's puzzle</a>.</p>
+    </section>
+
+    <h2>About the daily puzzle</h2>
+    <p>
+      WordGuess is a free daily word puzzle, a Wordle-style game: guess the
+      hidden five-letter word in six tries, with each guess marked to show
+      which letters are in the right spot, in the wrong spot, or not in the
+      word. There is one shared daily puzzle, so everyone gets the same word
+      on the same calendar day, and a new one arrives at midnight in your own
+      time zone.
+    </p>
+    <p>
+      Puzzles are numbered from #1 on 1 January 2026 and go up by one each
+      day. A past puzzle moves into this list the day after it was live.
+      "Play" opens that exact puzzle in your browser with the same word it
+      had on its day; it will not change your streak in the app.
+    </p>
+    <p>
+      The free iPhone and iPad app adds day streaks, unlimited extra rounds,
+      widgets and Game Center leaderboards, with no ads and no tracking.
+    </p>
+
+    <div class="actions">
+      <a class="button" href="/wordguess-support/d/">Play today's puzzle</a>
+      <a class="button outline" href="https://apps.apple.com/app/id6810256865">Get the app</a>
+    </div>
+  </main>
+
+  <footer>
+    <nav aria-label="WordGuess">
+      <a href="/wordguess-support/d/">Play today's puzzle</a>
+      <a href="/wordguess-support/hints/">Today's hints</a>
+      <a href="/wordguess-support/">Support</a>
+      <a href="/wordguess-support/privacy.html">Privacy</a>
+    </nav>
+    <p>© 2026 FH Development Studio, LLC. No ads, no tracking, no cookies.</p>
+  </footer>
+
+  <script src="/wordguess-support/words.js"></script>
+  <script>
+    /*<engine>*/
+    // Copied unchanged from the puzzle page (d/index.html, same engine
+    // markers) so this page derives exactly the same daily answer. Verify
+    // with node after any edit: both copies must agree for every number.
+    var WGEngine = (function () {
+      var MASK = (1n << 64n) - 1n;
+      var GOLDEN = 0x9E3779B97F4A7C15n;
+
+      // Engine/DailyPuzzle.swift, SplitMix64.next() — first draw for `seed`.
+      function splitMix64First(seed) {
+        var state = (seed + GOLDEN) & MASK;
+        var z = state;
+        z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & MASK;
+        z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & MASK;
+        return z ^ (z >> 31n);
+      }
+
+      // DailyPuzzle.answer(forPuzzleNumber:from:) — index into answers.txt order.
+      function answerIndex(number, count) {
+        var n = BigInt(Math.max(number, 1));
+        var seed = (n * GOLDEN) & MASK;
+        return Number(splitMix64First(seed) % BigInt(count));
+      }
+
+      function wordAt(packed, index) {
+        return packed.substr(index * 5, 5);
+      }
+
+      function dailyAnswer(number, packedAnswers) {
+        var count = packedAnswers.length / 5;
+        if (count < 1) return null;
+        return wordAt(packedAnswers, answerIndex(number, count)).toUpperCase();
+      }
+
+      // DailyPuzzle.number(for:) — whole local-calendar days since
+      // 2026-01-01, plus 1, never below 1. Date.UTC on the local
+      // year/month/day counts calendar days without DST drift.
+      function puzzleNumber(date) {
+        var day = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+        var epoch = Date.UTC(2026, 0, 1);
+        return Math.max(Math.round((day - epoch) / 86400000), 0) + 1;
+      }
+
+      return { answerIndex: answerIndex, dailyAnswer: dailyAnswer, puzzleNumber: puzzleNumber };
+    })();
+    /*</engine>*/
+
+    (function () {
+      var haveWords = typeof window.WG_ANSWERS === "string" && window.WG_ANSWERS.length >= 5 &&
+        typeof BigInt === "function";
+      if (!haveWords) { document.getElementById("unavailable").hidden = false; return; }
+
+      var container = document.getElementById("months");
+      var countLine = document.getElementById("count");
+      var DAY = 86400000;
+      var EPOCH = Date.UTC(2026, 0, 1);
+
+      // Calendar day of puzzle n, as a UTC-midnight Date (formatted in UTC
+      // so the label is the same calendar day in every time zone).
+      function dayOf(n) { return new Date(EPOCH + (n - 1) * DAY); }
+      function longDate(d) {
+        return d.toLocaleDateString(undefined, { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", year: "numeric" });
+      }
+      function monthName(d) {
+        return d.toLocaleDateString(undefined, { timeZone: "UTC", month: "long", year: "numeric" });
+      }
+
+      // A past puzzle's answer, or null for today's and anything later.
+      // Checked against the clock at the moment of the press.
+      function pastAnswer(n) {
+        if (!(n >= 1) || n >= WGEngine.puzzleNumber(new Date())) return null;
+        return WGEngine.dailyAnswer(n, window.WG_ANSWERS);
+      }
+
+      var today = WGEngine.puzzleNumber(new Date());
+      var newest = today - 1;            // yesterday's puzzle
+      if (newest < 1) {
+        countLine.textContent = "No past puzzles yet. The first one is still in play.";
+        return;
+      }
+      countLine.textContent = newest === 1
+        ? "1 past puzzle: #1."
+        : newest + " past puzzles: #" + newest + " back to #1.";
+
+      // Group puzzle numbers by calendar month, newest first.
+      var groups = [];
+      for (var n = newest; n >= 1; n--) {
+        var d = dayOf(n);
+        var key = d.getUTCFullYear() * 12 + d.getUTCMonth();
+        var last = groups[groups.length - 1];
+        if (!last || last.key !== key) { last = { key: key, first: n, last: n, date: d }; groups.push(last); }
+        last.last = n;                   // lowest number in the month
+      }
+
+      function buildRows(group, list) {
+        var fragment = document.createDocumentFragment();
+        for (var n = group.first; n >= group.last; n--) {
+          var d = dayOf(n);
+          var li = document.createElement("li");
+
+          var num = document.createElement("span");
+          num.className = "num";
+          num.textContent = "#" + n;
+          li.appendChild(num);
+
+          var time = document.createElement("time");
+          time.setAttribute("datetime", d.toISOString().slice(0, 10));
+          time.textContent = longDate(d);
+          li.appendChild(time);
+
+          // The puzzle page plays /d/<n> for any number up to tomorrow's.
+          var play = document.createElement("a");
+          play.className = "play";
+          play.href = "/wordguess-support/d/" + n;
+          play.rel = "nofollow";
+          play.textContent = "Play";
+          play.setAttribute("aria-label", "Play puzzle #" + n);
+          li.appendChild(play);
+
+          var controls = document.createElement("div");
+          controls.className = "controls";
+          var show = document.createElement("button");
+          show.type = "button";
+          show.className = "show";
+          show.textContent = "Show answer";
+          show.setAttribute("data-n", String(n));
+          show.setAttribute("aria-expanded", "false");
+          show.setAttribute("aria-controls", "word-" + n);
+          show.setAttribute("aria-label", "Show answer for puzzle #" + n);
+          controls.appendChild(show);
+          var word = document.createElement("span");
+          word.className = "word";
+          word.id = "word-" + n;
+          word.setAttribute("role", "status");
+          word.setAttribute("aria-live", "polite");
+          controls.appendChild(word);
+          li.appendChild(controls);
+
+          fragment.appendChild(li);
+        }
+        list.appendChild(fragment);
+      }
+
+      groups.forEach(function (group, index) {
+        var id = "month-" + group.key;
+        var section = document.createElement("section");
+        section.className = "month";
+
+        var h3 = document.createElement("h3");
+        var toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "month-toggle";
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-controls", id);
+        var name = document.createElement("span");
+        name.textContent = monthName(group.date);
+        var meta = document.createElement("span");
+        meta.className = "meta";
+        meta.textContent = group.first === group.last
+          ? "#" + group.first
+          : "#" + group.last + " to #" + group.first;
+        toggle.appendChild(name);
+        toggle.appendChild(meta);
+        h3.appendChild(toggle);
+        section.appendChild(h3);
+
+        var list = document.createElement("ul");
+        list.className = "rows";
+        list.id = id;
+        list.hidden = true;
+        section.appendChild(list);
+
+        var built = false;
+        function setOpen(open) {
+          if (open && !built) { buildRows(group, list); built = true; }
+          list.hidden = !open;
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+        toggle.addEventListener("click", function () { setOpen(list.hidden); });
+        if (index === 0) setOpen(true);  // the current month starts open
+
+        container.appendChild(section);
+      });
+
+      // One listener for every "Show answer" button.
+      container.addEventListener("click", function (event) {
+        var button = event.target.closest ? event.target.closest(".show") : null;
+        if (!button) return;
+        var n = parseInt(button.getAttribute("data-n"), 10);
+        var out = document.getElementById("word-" + n);
+        if (button.getAttribute("aria-expanded") === "true") {
+          out.textContent = "";
+          button.setAttribute("aria-expanded", "false");
+          button.textContent = "Show answer";
+          button.setAttribute("aria-label", "Show answer for puzzle #" + n);
+          return;
+        }
+        var answer = pastAnswer(n);
+        if (!answer) return;
+        out.textContent = answer;
+        button.setAttribute("aria-expanded", "true");
+        button.textContent = "Hide answer";
+        button.setAttribute("aria-label", "Hide answer for puzzle #" + n);
+      });
+    })();
+  </script>
+</body>
+</html>

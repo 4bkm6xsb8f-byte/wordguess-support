@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    WordGuess — today's hints. Static text for readers and search engines;
+    the script fills in today's puzzle number and date and computes each
+    hint from /wordguess-support/words.js with the same answer rule as the
+    puzzle page (d/index.html). Nothing about the answer is written to the
+    DOM until its own control is pressed. No external requests, no storage.
+  -->
+  <title>Today's WordGuess hints and answer — daily word puzzle clues</title>
+  <meta name="description" content="Stuck on today's WordGuess daily word puzzle? Reveal spoiler-free hints one at a time: vowel count, repeated letters, first letter, last letter, then the answer if you need it.">
+  <meta name="apple-itunes-app" content="app-id=6810256865">
+  <link rel="canonical" href="https://4bkm6xsb8f-byte.github.io/wordguess-support/hints/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600&display=swap">
+  <meta property="og:site_name" content="WordGuess">
+  <meta property="og:title" content="Today's WordGuess hints">
+  <meta property="og:description" content="Spoiler-free hints for today's five-letter daily word puzzle, revealed one tap at a time, with the answer behind a final button.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://4bkm6xsb8f-byte.github.io/wordguess-support/hints/">
+  <meta name="twitter:card" content="summary">
+  <meta name="theme-color" content="#1D2D3D">
+  <style>
+    :root {
+      --ink: #1D1F20;
+      --paper: #F2F2F3;
+      --steel: #5980A6;
+      --steel-deep: #416180;
+      --steel-field: #1D2D3D;
+      --amber: #C99150;
+      --amber-ink: #241A09;
+      --neutral: #5D5D60;
+      --neutral-light: #E7E7EA;
+      --bg: var(--paper);
+      --fg: var(--ink);
+      --muted: rgba(29, 31, 32, 0.74);
+      --hairline: rgba(29, 31, 32, 0.16);
+      --tile-filled: rgba(29, 31, 32, 0.55);
+      --key: rgba(29, 31, 32, 0.08);
+      --link: var(--steel-deep);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: var(--steel-field);
+        --fg: var(--paper);
+        --muted: rgba(242, 242, 243, 0.76);
+        --hairline: rgba(242, 242, 243, 0.18);
+        --tile-filled: rgba(242, 242, 243, 0.55);
+        --key: rgba(242, 242, 243, 0.12);
+        --link: #8FB0D0;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px; line-height: 1.55;
+      padding: 20px 16px 48px;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    [hidden] { display: none !important; }
+    header, main, footer { width: 100%; max-width: 520px; margin: 0 auto; }
+    header { text-align: center; }
+    .wordmark { display: inline-flex; gap: 5px; margin-bottom: 14px; text-decoration: none; }
+    .wordmark span {
+      width: 34px; height: 34px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; letter-spacing: 0;
+      color: var(--paper);
+      position: relative;
+    }
+    .wordmark .c { background: var(--steel-deep); }
+    .wordmark .p { background: var(--amber); color: var(--amber-ink); }
+    .wordmark .a { background: var(--neutral); color: var(--neutral-light); }
+    .wordmark .e { border: 1px solid var(--hairline); color: var(--fg); }
+    .wordmark span::after {
+      position: absolute; top: 2px; right: 3px;
+      font-size: 7px; line-height: 1; opacity: 0.85;
+    }
+    .wordmark .c::after { content: "\2713"; }
+    .wordmark .p::after { content: "\25B2"; }
+    .wordmark .a::after { content: "\2013"; }
+    .eyebrow {
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 10px;
+    }
+    h1, h2 {
+      font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-weight: 600; letter-spacing: 0; line-height: 1.15;
+    }
+    h1 { font-size: 32px; margin: 0 0 10px; }
+    h2 { font-size: 22px; margin: 36px 0 10px; }
+    p { margin: 0 0 14px; }
+    .lede { color: var(--muted); margin-bottom: 20px; }
+    a { color: var(--link); }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+    .actions { display: grid; gap: 10px; margin: 20px 0 8px; }
+    @media (min-width: 440px) { .actions { grid-template-columns: 1fr 1fr; } }
+    .button {
+      display: block; width: 100%; text-align: center;
+      background: var(--steel-deep); color: var(--paper);
+      text-decoration: none; font-weight: 700; font-size: 16px;
+      padding: 15px 18px; border: 1.5px solid var(--steel-deep); border-radius: 0;
+      font-family: inherit; cursor: pointer;
+    }
+    .button:active { background: var(--steel-field); }
+    .button.outline {
+      background: transparent; color: var(--fg);
+      border-color: var(--tile-filled);
+    }
+    footer {
+      margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--hairline);
+      font-size: 13px; color: var(--muted);
+    }
+    footer nav a { margin-right: 14px; white-space: nowrap; }
+    .today { font-weight: 600; margin: 0 0 14px; font-variant-numeric: tabular-nums; }
+    .hints { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .hint {
+      display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px;
+      text-align: left; font-family: inherit; font-size: 16px; font-weight: 600;
+      color: var(--fg); background: var(--key);
+      border: 1.5px solid var(--hairline); border-radius: 0;
+      padding: 14px 14px; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .hint .state { font-size: 13px; font-weight: 400; color: var(--muted); white-space: nowrap; }
+    .hint[aria-expanded="true"] { border-color: var(--tile-filled); }
+    .reveal { margin: 0; }
+    .reveal:not(:empty) {
+      padding: 12px 14px; border: 1.5px solid var(--tile-filled); border-top: 0;
+    }
+    .reveal strong { letter-spacing: 0.04em; }
+    .spoiler { margin-top: 26px; }
+    .spoiler .warn { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+    #answerOut:not(:empty) {
+      margin: 12px 0 0; padding: 16px; text-align: center;
+      background: var(--steel-deep); color: var(--paper);
+    }
+    #answerOut strong {
+      display: block; font-family: "Barlow Condensed", "Barlow", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 34px; font-weight: 600; letter-spacing: 0.14em; line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="wordmark" href="/wordguess-support/d/" aria-label="WordGuess: play today's puzzle">
+      <span class="c" aria-hidden="true">W</span><span class="p" aria-hidden="true">O</span><span class="a" aria-hidden="true">R</span><span class="e" aria-hidden="true">D</span><span class="e" aria-hidden="true">S</span>
+    </a>
+  </header>
+
+  <main>
+    <p class="eyebrow">WordGuess · Daily puzzle</p>
+    <h1>Today's WordGuess hints</h1>
+    <p class="lede">
+      Stuck on today's daily word puzzle? Open the hints below one at a time.
+      Each one stays hidden until you tap it, so you can take just as much help
+      as you want and still solve the word yourself.
+    </p>
+
+    <div class="actions">
+      <a class="button" href="/wordguess-support/d/">Play today's puzzle</a>
+      <a class="button outline" href="https://apps.apple.com/app/id6810256865">Get the app</a>
+    </div>
+
+    <section id="hints" aria-labelledby="hintsHeading" hidden>
+      <h2 id="hintsHeading">Hints for today's puzzle</h2>
+      <p class="today" id="today"></p>
+      <ol class="hints">
+        <li>
+          <button class="hint" type="button" data-hint="vowels" aria-expanded="false" aria-controls="hintVowels">
+            <span>Hint 1: How many vowels?</span><span class="state">Tap to reveal</span>
+          </button>
+          <p class="reveal" id="hintVowels" role="status" aria-live="polite"></p>
+        </li>
+        <li>
+          <button class="hint" type="button" data-hint="repeat" aria-expanded="false" aria-controls="hintRepeat">
+            <span>Hint 2: Does any letter repeat?</span><span class="state">Tap to reveal</span>
+          </button>
+          <p class="reveal" id="hintRepeat" role="status" aria-live="polite"></p>
+        </li>
+        <li>
+          <button class="hint" type="button" data-hint="first" aria-expanded="false" aria-controls="hintFirst">
+            <span>Hint 3: First letter</span><span class="state">Tap to reveal</span>
+          </button>
+          <p class="reveal" id="hintFirst" role="status" aria-live="polite"></p>
+        </li>
+        <li>
+          <button class="hint" type="button" data-hint="last" aria-expanded="false" aria-controls="hintLast">
+            <span>Hint 4: Last letter</span><span class="state">Tap to reveal</span>
+          </button>
+          <p class="reveal" id="hintLast" role="status" aria-live="polite"></p>
+        </li>
+      </ol>
+
+      <div class="spoiler">
+        <p class="warn">Spoiler: the button below shows the full answer to today's puzzle.</p>
+        <button class="button outline" id="answerButton" type="button" aria-expanded="false" aria-controls="answerOut">Reveal answer</button>
+        <p id="answerOut" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <noscript>
+      <p><strong>The hints need JavaScript.</strong> They are worked out in your browser from today's date, so nothing is sent anywhere. Turn JavaScript on and reload, or just <a href="/wordguess-support/d/">play today's puzzle</a>.</p>
+    </noscript>
+    <p id="unavailable" hidden>The hints could not be loaded. Reload the page, or <a href="/wordguess-support/d/">play today's puzzle</a>.</p>
+
+    <h2>How WordGuess works</h2>
+    <p>
+      WordGuess is a free daily word puzzle, a Wordle-style game: guess the
+      hidden five-letter word in six tries. After each guess every tile is
+      marked. A check mark means the letter is in the right spot, a triangle
+      means the letter is in the word but in a different spot, and a dash
+      means the letter is not in the word at all.
+    </p>
+    <p>
+      There is one shared daily puzzle. Everyone gets the same word on the
+      same calendar day, and a new puzzle arrives at midnight in your own
+      time zone. Puzzle #1 was 1 January 2026 and the number goes up by one
+      every day, so the hints on this page change every day too.
+    </p>
+
+    <h2>How to use the hints</h2>
+    <p>
+      The hints run from gentle to strong. The vowel count (A, E, I, O and U)
+      and the repeated-letter check narrow things down without giving away
+      any letter. The first and last letters are bigger nudges. The full
+      answer sits behind its own "Reveal answer" button, so you will never
+      see it by accident.
+    </p>
+    <p>
+      Finished already? Look back through the
+      <a href="/wordguess-support/archive/">past WordGuess puzzles and answers</a>,
+      or get the free iPhone and iPad app for day streaks, unlimited extra
+      rounds, widgets and Game Center leaderboards.
+    </p>
+
+    <div class="actions">
+      <a class="button" href="/wordguess-support/d/">Play today's puzzle</a>
+      <a class="button outline" href="https://apps.apple.com/app/id6810256865">Get the app</a>
+    </div>
+  </main>
+
+  <footer>
+    <nav aria-label="WordGuess">
+      <a href="/wordguess-support/d/">Play today's puzzle</a>
+      <a href="/wordguess-support/archive/">Past puzzles</a>
+      <a href="/wordguess-support/">Support</a>
+      <a href="/wordguess-support/privacy.html">Privacy</a>
+    </nav>
+    <p>© 2026 FH Development Studio, LLC. No ads, no tracking, no cookies.</p>
+  </footer>
+
+  <script src="/wordguess-support/words.js"></script>
+  <script>
+    /*<engine>*/
+    // Copied unchanged from the puzzle page (d/index.html, same engine
+    // markers) so this page derives exactly the same daily answer. Verify
+    // with node after any edit: both copies must agree for every number.
+    var WGEngine = (function () {
+      var MASK = (1n << 64n) - 1n;
+      var GOLDEN = 0x9E3779B97F4A7C15n;
+
+      // Engine/DailyPuzzle.swift, SplitMix64.next() — first draw for `seed`.
+      function splitMix64First(seed) {
+        var state = (seed + GOLDEN) & MASK;
+        var z = state;
+        z = ((z ^ (z >> 30n)) * 0xBF58476D1CE4E5B9n) & MASK;
+        z = ((z ^ (z >> 27n)) * 0x94D049BB133111EBn) & MASK;
+        return z ^ (z >> 31n);
+      }
+
+      // DailyPuzzle.answer(forPuzzleNumber:from:) — index into answers.txt order.
+      function answerIndex(number, count) {
+        var n = BigInt(Math.max(number, 1));
+        var seed = (n * GOLDEN) & MASK;
+        return Number(splitMix64First(seed) % BigInt(count));
+      }
+
+      function wordAt(packed, index) {
+        return packed.substr(index * 5, 5);
+      }
+
+      function dailyAnswer(number, packedAnswers) {
+        var count = packedAnswers.length / 5;
+        if (count < 1) return null;
+        return wordAt(packedAnswers, answerIndex(number, count)).toUpperCase();
+      }
+
+      // DailyPuzzle.number(for:) — whole local-calendar days since
+      // 2026-01-01, plus 1, never below 1. Date.UTC on the local
+      // year/month/day counts calendar days without DST drift.
+      function puzzleNumber(date) {
+        var day = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+        var epoch = Date.UTC(2026, 0, 1);
+        return Math.max(Math.round((day - epoch) / 86400000), 0) + 1;
+      }
+
+      return { answerIndex: answerIndex, dailyAnswer: dailyAnswer, puzzleNumber: puzzleNumber };
+    })();
+    /*</engine>*/
+
+    (function () {
+      var section = document.getElementById("hints");
+      var haveWords = typeof window.WG_ANSWERS === "string" && window.WG_ANSWERS.length >= 5 &&
+        typeof BigInt === "function";
+      if (!haveWords) { document.getElementById("unavailable").hidden = false; return; }
+
+      var heading = document.getElementById("hintsHeading");
+      var todayLine = document.getElementById("today");
+      var answerButton = document.getElementById("answerButton");
+      var answerOut = document.getElementById("answerOut");
+      var hintButtons = Array.prototype.slice.call(document.querySelectorAll(".hint"));
+      var number = null;
+
+      // Hint text for one answer. Vowels are A, E, I, O, U, counted per
+      // position (GEESE has three).
+      function hintText(kind, answer) {
+        var letters = answer.split("");
+        if (kind === "vowels") {
+          var count = letters.filter(function (ch) { return "AEIOU".indexOf(ch) !== -1; }).length;
+          return "Today's word has " + count + (count === 1 ? " vowel" : " vowels") + " (counting A, E, I, O and U, not Y).";
+        }
+        if (kind === "repeat") {
+          var repeats = letters.some(function (ch, i) { return letters.indexOf(ch) !== i; });
+          return repeats
+            ? "Yes. At least one letter appears more than once."
+            : "No. All five letters are different.";
+        }
+        if (kind === "first") return "The first letter is " + letters[0] + ".";
+        if (kind === "last") return "The last letter is " + letters[letters.length - 1] + ".";
+        return "";
+      }
+
+      function close(button, label) {
+        button.setAttribute("aria-expanded", "false");
+        document.getElementById(button.getAttribute("aria-controls")).textContent = "";
+        var state = button.querySelector(".state");
+        if (state) state.textContent = "Tap to reveal"; else button.textContent = label;
+      }
+
+      // Today's number, re-checked on every press so a page left open past
+      // midnight never shows yesterday's hints under today's heading.
+      function refresh() {
+        var now = new Date();
+        var current = WGEngine.puzzleNumber(now);
+        if (current === number) return;
+        number = current;
+        heading.textContent = "Hints for WordGuess #" + number;
+        var date = now.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        todayLine.textContent = "Daily puzzle #" + number + " · " + date;
+        hintButtons.forEach(function (button) { close(button); });
+        close(answerButton, "Reveal answer");
+      }
+
+      hintButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          refresh();
+          if (button.getAttribute("aria-expanded") === "true") { close(button); return; }
+          var answer = WGEngine.dailyAnswer(number, window.WG_ANSWERS);
+          if (!answer) return;
+          document.getElementById(button.getAttribute("aria-controls")).textContent =
+            hintText(button.getAttribute("data-hint"), answer);
+          button.setAttribute("aria-expanded", "true");
+          button.querySelector(".state").textContent = "Hide";
+        });
+      });
+
+      answerButton.addEventListener("click", function () {
+        refresh();
+        if (answerButton.getAttribute("aria-expanded") === "true") { close(answerButton, "Reveal answer"); return; }
+        var answer = WGEngine.dailyAnswer(number, window.WG_ANSWERS);
+        if (!answer) return;
+        answerOut.textContent = "The answer to WordGuess #" + number + " is ";
+        var strong = document.createElement("strong");
+        strong.textContent = answer;
+        answerOut.appendChild(strong);
+        answerButton.setAttribute("aria-expanded", "true");
+        answerButton.textContent = "Hide answer";
+      });
+
+      refresh();
+      section.hidden = false;
+    })();
+  </script>
+</body>
+</html>
