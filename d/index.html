@@ -364,7 +364,7 @@
       // (correct, present, absent) standing in for the emoji squares.
       var MARKS = { correct: "✓", present: "▲", absent: "–" };
       function shareText(number, guesses, answer, won, maxAttempts) {
-        var lines = ["FH Word Guess Daily #" + number + " " + (won ? guesses.length : "X") + "/" + maxAttempts, ""];
+        var lines = ["WordGuess Daily #" + number + " " + (won ? guesses.length : "X") + "/" + maxAttempts, ""];
         guesses.forEach(function (word) {
           lines.push(score(word, answer).map(function (s) { return MARKS[s]; }).join(""));
         });
